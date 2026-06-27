@@ -327,7 +327,8 @@
 
 <header>
     <img src="https://djkgramschatz.de/wp2020/wp-content/uploads/2020/01/DJK_Logo.png">
-    <div id="darkToggle" onclick="toggleDark()">🌙</div>
+    <h1>Sportfest 2026</h1>
+   <!-- <div id="darkToggle" onclick="toggleDark()">🌙</div> -->
 </header>
 
 <div id="topBar">
@@ -426,6 +427,9 @@ history.forEach(item => {
 
     list.appendChild(li);
 });
+
+document.getElementById("itemList").scrollTop =
+    document.getElementById("itemList").scrollHeight;
 
     }
 
