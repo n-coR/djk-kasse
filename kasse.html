@@ -352,8 +352,9 @@
 
     <!-- Rechte Seite -->
     <div id="buttons">
-        <button class="button" onclick="add('Pfand', 1)">Pfand +1</button>
-        <button class="button" onclick="add('Pfand zurück', -1)">Pfand zurück -1</button>
+<button class="button" onclick="addPfand()">Pfand +1</button>
+<button class="button" onclick="removePfand()">Pfand zurück -1</button>
+
 
 <button class="button" onclick="addDrink('0,5 l Bier / Radler', 3.5)">Bier/Radler 3,50</button>
 <button class="button" onclick="addDrink('Maß Bier', 7)">Maß 7,00</button>
@@ -384,19 +385,39 @@
     let history = [];
     let dark = false;
 
-    function add(name, amount) {
-        history.push({name, amount});
-        total += amount;
+function undo() {
+    // Letztes echtes Produkt finden (Pfand Extra ignorieren)
+    let last = history.filter(i => i.name !== "Pfand Extra").slice(-1)[0];
+
+    // Falls es kein Produkt gibt → nur Pfand Extra prüfen
+    if (!last) {
+        let extra = history.find(i => i.name === "Pfand Extra");
+        if (!extra) return;
+
+        extra.qty--;
+        total -= 1;
+
+        if (extra.qty === 0) {
+            history = history.filter(i => i !== extra);
+        }
+
         update();
+        return;
     }
 
-    function undo() {
-        if (history.length > 0) {
-            let last = history.pop();
-            total -= last.amount;
-            update();
-        }
+    // Produkt reduzieren
+    last.qty--;
+    total -= (last.price + last.pfand);
+
+    // Wenn Produkt weg → löschen
+    if (last.qty === 0) {
+        history = history.filter(i => i !== last);
     }
+
+    update();
+}
+
+
 
     function resetAll() {
         history = [];
@@ -404,43 +425,54 @@
         update();
     }
 
-    function update() {
-        document.getElementById("summe").innerText =
-            total.toFixed(2).replace(".", ",") + " €";
+function update() {
+    document.getElementById("summe").innerText =
+        total.toFixed(2).replace(".", ",") + " €";
 
-        let list = document.getElementById("itemList");
-        list.innerHTML = "";
+    let list = document.getElementById("itemList");
+    list.innerHTML = "";
 
-history.forEach(item => {
-    let li = document.createElement("li");
+    history.forEach(item => {
 
-    if (item.name === "Pfand") {
-        li.style.fontSize = "18px";
-        li.style.color = "#555";
-        li.textContent = "↳ Pfand – " +
-            item.amount.toFixed(2).replace(".", ",") + " €";
-    } else {
+        // Hauptprodukt (inkl. Pfand Extra und Pfand zurück)
+        let li = document.createElement("li");
         li.style.fontSize = "24px";
-        li.textContent = item.name + " – " +
-            item.amount.toFixed(2).replace(".", ",") + " €";
-    }
+        li.textContent =
+            item.qty + " × " + item.name +
+            " – " +
+            (item.qty * item.price).toFixed(2).replace(".", ",") +
+            " €";
+        list.appendChild(li);
 
-    list.appendChild(li);
-});
+        // Nur echte Getränke haben Pfand pro Produkt
+        if (item.pfand > 0) {
+            let pf = document.createElement("li");
+            pf.style.fontSize = "18px";
+            pf.style.color = "#555";
+            pf.textContent =
+                "↳ Pfand – " +
+                (item.qty * item.pfand).toFixed(2).replace(".", ",") +
+                " € (" + item.qty + "×)";
+            list.appendChild(pf);
+        }
+    });
 
-document.getElementById("itemList").scrollTop =
-    document.getElementById("itemList").scrollHeight;
-
-    }
+    list.scrollTop = list.scrollHeight;
+}
 
     /* Pop-Up */
-    function openPopup() {
-        document.getElementById("popupSumme").innerText =
-            total.toFixed(2).replace(".", ",") + " €";
-        document.getElementById("popupGegeben").value = "";
-        document.getElementById("popupRueckgeld").innerText = "Rückgeld: 0,00 €";
-        document.getElementById("overlay").style.display = "flex";
-    }
+function openPopup() {
+    document.getElementById("popupSumme").innerText =
+        total.toFixed(2).replace(".", ",") + " €";
+
+    document.getElementById("popupGegeben").value = "";
+    document.getElementById("popupRueckgeld").innerText = "Rückgeld: 0,00 €";
+
+    document.getElementById("overlay").style.display = "flex";
+
+    // ⭐ Cursor direkt ins Eingabefeld setzen
+    document.getElementById("popupGegeben").focus();
+}
 
     function closePopup() {
         document.getElementById("overlay").style.display = "none";
@@ -467,17 +499,61 @@ function toggleDark() {
     }
 }
 
-function addDrink(name, price) {
-    // Hauptartikel
-    history.push({name: name, amount: price});
-    total += price;
+function removePfand() {
+    let item = history.find(i => i.name === "Pfand zurück");
 
-    // Automatischer Pfand
-    history.push({name: "Pfand", amount: 1});
-    total += 1;
+    if (item) {
+        item.qty++;
+    } else {
+        history.push({
+            name: "Pfand zurück",
+            price: -1,
+            qty: 1,
+            pfand: 0
+        });
+    }
 
+    total -= 1;
     update();
 }
+
+function addPfand() {
+    let item = history.find(i => i.name === "Pfand Extra");
+
+    if (item) {
+        item.qty++;
+    } else {
+        history.push({
+            name: "Pfand Extra",
+            price: 1,
+            qty: 1,
+            pfand: 0
+        });
+    }
+
+    total += 1;
+    update();
+}
+
+
+function addDrink(name, price) {
+    let item = history.find(i => i.name === name);
+
+    if (item) {
+        item.qty++;
+    } else {
+        history.push({
+            name: name,
+            price: price,
+            qty: 1,
+            pfand: 1   // Pfand pro Produkt
+        });
+    }
+
+    total += price + 1; // Produkt + Pfand
+    update();
+}
+
 
 </script>
 
