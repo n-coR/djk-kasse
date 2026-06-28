@@ -321,6 +321,38 @@
     color: #000;
 }
 
+#quickAmounts {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+#quickAmounts button {
+    background: var(--djk-yellow);
+    border: none;
+    padding: 12px 20px;
+    font-size: 22px;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+#quickAmounts button:active {
+    background: #d9ab00;
+}
+
+/* Darkmode */
+.dark #quickAmounts button {
+    background: #444;
+    color: white;
+}
+.dark #quickAmounts button:active {
+    background: #666;
+}
+
+
 </style>
 </head>
 <body>
@@ -373,6 +405,14 @@
         <h2>Zu zahlen: <span id="popupSumme">0,00 €</span></h2>
 
         <input type="number" id="popupGegeben" placeholder="Gegeben" oninput="calcPopupRueckgeld()">
+
+<div id="quickAmounts">
+    <button onclick="setQuickAmount(5)">5 €</button>
+    <button onclick="setQuickAmount(10)">10 €</button>
+    <button onclick="setQuickAmount(15)">15 €</button>
+    <button onclick="setQuickAmount(20)">20 €</button>
+    <button onclick="setQuickAmount(50)">50 €</button>
+</div>
 
         <div id="popupRueckgeld">Rückgeld: 0,00 €</div>
 
@@ -470,7 +510,6 @@ function openPopup() {
 
     document.getElementById("overlay").style.display = "flex";
 
-    // ⭐ Cursor direkt ins Eingabefeld setzen
     document.getElementById("popupGegeben").focus();
 }
 
@@ -553,6 +592,15 @@ function addDrink(name, price) {
     total += price + 1; // Produkt + Pfand
     update();
 }
+
+function setQuickAmount(amount) {
+    document.getElementById("popupGegeben").value = amount;
+    calcPopupRueckgeld();
+
+    // Fokus bleibt im Eingabefeld
+    document.getElementById("popupGegeben").focus();
+}
+
 
 
 </script>
